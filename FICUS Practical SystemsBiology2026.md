@@ -10,3 +10,4 @@ library(ficus)
 ```
 
 ## (1) Network curation with MOON
+From a bulk transcriptomics set, it is possible to derive transcription factor activities using methods such as [CollecTRI](https://github.com/saezlab/CollecTRI). 
