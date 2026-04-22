@@ -105,6 +105,11 @@ You can run the clustering for both cohorts A and B and compare how the Jaccard 
 In general, any approach that clusters the patient-specific network would fit in this step. You could take a moment to reflect (if you work with networks in your research) whether you have specific topology-related or biologically-related features that could be relevent for patient stratification. Think of number of interactions per protein, the presence of a protein subset, connectivity, or if you have access to patient annotations, whether e.g. cancer subtype or tumor grade could be used for patient subgroup formation. 
 
 ## (3) Converting MOON outputs to CellNOpt inputs 
+Until now, we've created patient-specific networks and subgroups. With our clusters formed, we can start preparing the group-specific logic-ODE model inputs: (1) a prior knowledge network (PKN) combining the patient-specific protein networks, and (2) training data based on the patient-specific functional scoring of corresponding proteins. 
+
+Let's start with the PKN, which will be saved as a SIF file for the logic-ODE model in CellNOpt. A straightforward way of creating a PKN representing the subgroup is by simply aggregating all patient-specific networks (intersect between all networks). One important issue is however that this significantly increases the number of edges in the network. To optimize an ODE model with thousands of edges (the number of parameters scales directly with the network size) becomes rapidly infeasible. We therefore include a strong network reduction step in the preparation of the PKN. 
+
+
 
 part 1 : preparing combined PKN 
 part 2 : preparing MIDAS (training data)
