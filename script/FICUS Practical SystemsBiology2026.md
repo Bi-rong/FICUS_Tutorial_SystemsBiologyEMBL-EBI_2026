@@ -65,6 +65,7 @@ The ```run_MOON``` function saves the several files, either required for the con
 - **(*)_MOONscores.png** : visualization of all patient-specific MOON scores, including the interval that was selected for further processing
 - **(*).RData** : R object with patient-specific data 
 - **00_PKNsizes.RData** : overview of all protein network sizes (number of edges)
+- **PKNsizes.png** : visualization of PKN sizes after reduction
 
 ## (2) Network clustering 
 
