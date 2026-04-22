@@ -40,6 +40,7 @@ net$confidence <- NA
 net <- net[,c('source', 'confidence', 'target', 'mor')]
 
 # running MOON
+# this section takes around 5 minutes to run 
 start <- 1
 end <- length(cosmos_inputs_A) # 11:49
 run_MOON(cosmos_inputs=cosmos_inputs_A, 
