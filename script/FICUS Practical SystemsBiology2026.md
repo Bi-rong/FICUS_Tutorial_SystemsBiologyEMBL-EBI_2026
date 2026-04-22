@@ -73,7 +73,7 @@ After you've run the demo code above for cohortA, you can inspect the outputs, i
 Important is that if you use higher thresholds, the effect on the network becomes relatively patient-specific. You can also test how the variation in network sizes changes based on these threshold values. If you use another data set, note that for a soft network reduction, a generalized value can be used. If you wish to do already stronger network filtering before the clustering, it might be necessary to set these thresholds more manually to retain consistency across patients. 
 
 ## (2) Network clustering 
-If you're satisfied with the patient-specific networks, you can use these networks to create patient subgroups. We introduce here a simple approach based on similarity between network edges, also referred to as the 'Jaccard' clustering metric. As we saved quite a lot of intermediate results in the previous section, we can load them directly. 
+If you're satisfied with the patient-specific networks, you can use these networks to create patient subgroups. We introduce here a simple hierarchical clustering approach based on similarity between network edges, also referred to as the 'Jaccard' clustering metric. As we saved quite a lot of intermediate results in the previous section, we can load them directly. Note that the clustering scales with the number of patients, as it requires calculation of all pairwise Jaccard indices. For 20 patients, it'll only take a few minutes at most, but this can scale up quite rapidly if you have hundreds of patients.   
 
 ```ruby
 # load data from previous run 
@@ -82,9 +82,9 @@ nPatients <- length(unique(allSIF$patient))
 all_edges <- unique(allSIF[,c('source', 'target')])
 
 # perform clustering 
-# this section takes around (13:33)
+# this section takes a few minutes 
 cluster_metric = 'Jaccard'
-output_folder = '../output/clustering/'
+output_folder = ## ADD EXISTING OUTPUT FOLDER
 nClusters = 3
 
 res <- cluster_networks(nPatients, all_edges, allSIF,
@@ -94,10 +94,22 @@ save(res, file=paste(output_folder, 'Heatmap_', cluster_metric, '_data.RData', s
 
 ```
 
+The ```cluster_networks``` will save three outputs (**(*)** stands for the number of clusters you've chosen for the hierarchical clustering):
+- **Automatic_Clusters_Jaccard_nClusters=(*)** : overview of all patients and corresponding cluster index that was assigned to them
+- **Heatmap_Jaccard.png**: visualization of pairwise Jaccard indices and corresponding clusters
+- **Heatmap_Jaccard_data.RData**: includes variable ```res``` which can be used to reproduce the heatmap and in case you want to set a different number of clusters, prevents you from having to calculate all pairwise Jaccard indices if you only want to create a different number of clusters 
+
 ### Assignment 
-( In general, any approach clustering these networks would fit in this step. If you have any ideas on how to cluster network based on e.g. topology or other features, feel free to try with the retrieved patient-specific networks. -> assignment motivating participants to think about what features could be relevant (for their research?) and how they could use that to create patient subgroups. Or perhaps they have annotations to use for stratification?)
+You can run the clustering for both cohorts A and B and compare how the Jaccard indices differ, and how the clusters are formed. 
+
+In general, any approach that clusters the patient-specific network would fit in this step. You could take a moment to reflect (if you work with networks in your research) whether you have specific topology-related or biologically-related features that could be relevent for patient stratification. Think of number of interactions per protein, the presence of a protein subset, connectivity, or if you have access to patient annotations, whether e.g. cancer subtype or tumor grade could be used for patient subgroup formation. 
 
 ## (3) Converting MOON outputs to CellNOpt inputs 
+
+part 1 : preparing combined PKN 
+part 2 : preparing MIDAS (training data)
+
+Assignment: inspect SIF and MIDAS, try out with other data set, try out different strengths in network reduction 
 
 ## (4) Model optimization 
 
