@@ -19,7 +19,7 @@ load('../data/cohortB.RData')
 ```
 
 ## (1) Network curation with MOON
-To derive patient-specific protein networks and corresponding functional scores for protiens, we'll provide the following inputs to MOON: (1) transcription factor (TF) activities, derived from bulk transcriptomics using [CollecTRI](https://github.com/saezlab/CollecTRI), and (2) a general Omnipath PKN. TF activities have already been loaded for ```cohortA``` and ```cohortB```, which we can use with the Omnipath PKN to run MOON. While running MOON, coherence checks are also performed and a soft network reduction to create smaller networks more computationally feasible for follow-up steps but still of significant size which we leverage when creating patient subgroups. For the MOON variables, you can play around with different value. Please note that you'll need to create and define the folder for output files. 
+To derive patient-specific protein networks and corresponding functional scores for protiens, we'll provide the following inputs to MOON: (1) transcription factor (TF) activities, derived from bulk transcriptomics using [CollecTRI](https://github.com/saezlab/CollecTRI), and (2) a general Omnipath PKN. TF activities have already been loaded for ```cohortA``` and ```cohortB```, which we can use with the Omnipath PKN to run MOON. While running MOON, coherence checks are also performed and a soft network reduction to create smaller networks more computationally feasible for follow-up steps but still of significant size which we leverage when creating patient subgroups. Please note that you'll need to create and define the folder for output files. 
 
 ```ruby
 # setting some variables for MOON
@@ -28,7 +28,7 @@ min_size_PKN = 20 # minimal size for PKN
 significant_input_threshold <- 2 # threshold to filter TF activities 
 n_steps <- 6 # number of steps during network pruning
 use_subset = F # if desired, can select subset of proteins for network
-output_folder <- '../output/MOON/'
+output_folder <- ## ADD EXISTING OUTPUT FOLDER
 
 # thresholds for soft network reduction
 primary_threshold1 = 0.5
@@ -67,8 +67,35 @@ The ```run_MOON``` function saves the several files, either required for the con
 - **00_PKNsizes.RData** : overview of all protein network sizes (number of edges)
 - **PKNsizes.png** : visualization of PKN sizes after reduction
 
-## (2) Network clustering 
+### Assignment 
+After you've run the demo code above for cohortA, you can inspect the outputs, including functional scoring (ATT) and protein networks (SIF). The SIF files can also be loaded into a software such as Cytoscape for visualization. Note that only a soft network reduction is used, you can try changing the ```primary_threshold1``` and ```secondary_threshold1``` to get a feel for how these thresholds affect the network sizes. 
 
+Important is that if you use higher thresholds, the effect on the network becomes relatively patient-specific. You can also test how the variation in network sizes changes based on these threshold values. If you use another data set, note that for a soft network reduction, a generalized value can be used. If you wish to do already stronger network filtering before the clustering, it might be necessary to set these thresholds more manually to retain consistency across patients. 
+
+## (2) Network clustering 
+If you're satisfied with the patient-specific networks, you can use these networks to create patient subgroups. We introduce here a simple approach based on similarity between network edges, also referred to as the 'Jaccard' clustering metric. As we saved quite a lot of intermediate results in the previous section, we can load them directly. 
+
+```ruby
+# load data from previous run 
+load('../output/MOON/allSIF.RData')
+nPatients <- length(unique(allSIF$patient))
+all_edges <- unique(allSIF[,c('source', 'target')])
+
+# perform clustering 
+# this section takes around (13:33)
+cluster_metric = 'Jaccard'
+output_folder = '../output/clustering/'
+nClusters = 3
+
+res <- cluster_networks(nPatients, all_edges, allSIF,
+                        output_folder, nClusters, 
+                        metric = cluster_metric) 
+save(res, file=paste(output_folder, 'Heatmap_', cluster_metric, '_data.RData', sep=''))
+
+```
+
+### Assignment 
+( In general, any approach clustering these networks would fit in this step. If you have any ideas on how to cluster network based on e.g. topology or other features, feel free to try with the retrieved patient-specific networks. -> assignment motivating participants to think about what features could be relevant (for their research?) and how they could use that to create patient subgroups. Or perhaps they have annotations to use for stratification?)
 
 ## (3) Converting MOON outputs to CellNOpt inputs 
 
