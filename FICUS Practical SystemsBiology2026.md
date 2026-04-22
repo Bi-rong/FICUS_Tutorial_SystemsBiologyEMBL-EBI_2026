@@ -53,8 +53,6 @@ The ```run_MOON``` function saves the several files, either required for the con
 - **(*).RData** : R object with patient-specific data 
 - **00_PKNsizes.RData** : overview of all protein network sizes (number of edges)
 
-
-
 ## (2) Network clustering 
 
 
