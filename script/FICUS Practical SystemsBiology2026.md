@@ -19,7 +19,7 @@ load('../data/cohortB.RData')
 ```
 
 ## (1) Network curation with MOON
-To derive patient-specific protein networks and corresponding functional scores for protiens, we'll provide the following inputs to MOON: (1) transcription factor (TF) activities, derived from bulk transcriptomics using [CollecTRI](https://github.com/saezlab/CollecTRI), and (2) a general Omnipath PKN. TF activities have already been loaded for ```cohortA``` and ```cohortB```, which we can use with the Omnipath PKN to run MOON. While running MOON, coherence checks are also performed and a soft network reduction to create smaller networks more computationally feasible for follow-up steps but still of significant size which we leverage when creating patient subgroups. 
+To derive patient-specific protein networks and corresponding functional scores for protiens, we'll provide the following inputs to MOON: (1) transcription factor (TF) activities, derived from bulk transcriptomics using [CollecTRI](https://github.com/saezlab/CollecTRI), and (2) a general Omnipath PKN. TF activities have already been loaded for ```cohortA``` and ```cohortB```, which we can use with the Omnipath PKN to run MOON. While running MOON, coherence checks are also performed and a soft network reduction to create smaller networks more computationally feasible for follow-up steps but still of significant size which we leverage when creating patient subgroups. For the MOON variables, you can play around with different value. Please note that you'll need to create and define the folder for output files. 
 
 ```ruby
 # setting some variables for MOON
@@ -28,7 +28,7 @@ min_size_PKN = 20 # minimal size for PKN
 significant_input_threshold <- 2 # threshold to filter TF activities 
 n_steps <- 6 # number of steps during network pruning
 use_subset = F # if desired, can select subset of proteins for network
-output_folder <- '../output/'
+output_folder <- '../output/MOON/'
 
 # thresholds for soft network reduction
 primary_threshold1 = 0.5
