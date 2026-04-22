@@ -20,8 +20,38 @@ cohortB <- read.csv(text = getURL("https://raw.github.com/aronlindberg/dummy.csv
 ```
 
 ## (1) Network curation with MOON
-From a bulk transcriptomics set, it is possible to derive transcription factor activities using methods such as [CollecTRI](https://github.com/saezlab/CollecTRI). 
+To derive patient-specific protein networks and corresponding functional scores for protiens, we'll provide the following inputs to MOON: (1) transcription factor (TF) activities, derived from bulk transcriptomics using [CollecTRI](https://github.com/saezlab/CollecTRI), and (2) a general Omnipath PKN. TF activities have already been loaded for ```cohortA``` and ```cohortB```, which we can use with the Omnipath PKN to run MOON. While running MOON, coherence checks are also performed and a soft network reduction to create smaller networks more computationally feasible for follow-up steps but still of significant size which we leverage when creating patient subgroups. 
 
+```ruby
+# load Omnipath PKN
+
+# setting some variables for MOON
+PKN_path <- '../data/clean_omnipath_PKN.RData' # data for initial PKN
+min_size_PKN = 20 # minimal size for PKN 
+significant_input_threshold <- 2 # threshold to filter TF activities 
+n_steps <- 6 # number of steps during network pruning
+use_subset = F # if desired, can select subset of proteins for network
+
+# thresholds for soft network reduction
+primary_threshold1 = 0.5
+secondary_threshold1 = 0.25
+
+# running MOON
+cosmos_inputs <- cohortA[['CosmosInputs']]
+start <- 1
+end <- length(cosmos_inputs)
+run_MOON(cosmos_inputs, significant_input_threshold, PKN_path, n_steps, 
+         use_subset, min_size_PKN, primary_threshold1, secondary_threshold1, 
+         output_folder, start, end)
+```
+
+The ```run_MOON``` function saves the several files, either required for the conversion to a logic model, or for analysis purposes (**(*)** stands for the cell line or patient id):
+- **allSIF.RData** : collection of all patient-specific protein networks, can be used for easy comparison and analysis of the curated networks
+- **(*)_BeforeReduction_SIF_decouplerino_full.csv** : patient-specific protein network before soft network reduction 
+- **(*)_SIF_decouplerino_full.csv** : final patient-specific protein network 
+- **(*)_ATT_decouplerino_full.csv** : functional scoring of each protein in the patient-specific protein network 
+- **(*).RData** : R object with patient-specific data 
+- **00_PKNsizes.RData** : overview of all protein network sizes (number of edges)
 
 ## (2) Network clustering 
 
