@@ -1,5 +1,5 @@
 # FICUS Practical SystemsBiology2026
-This file includes both explanation and the code for the practical. Separate R scripts are also available for each section containing only the code. 
+This file includes both explanation and the code for the practical. Separate R scripts are also available for each section containing only the code. This practical includes a demonstration of the main FICUS functions, allowing you to go from omics data to logic models. Two small patient cohorts are provided, one for demonstration purposes and one for you to use during the assignments. The assignments here are more guidelines on what can be tuned in the current framework, and what you might want to consider when using the tools. They are nothing more than a place where you can try out the FICUS tools, change variables, investigate the outputs and compare across data sets. The aim is to familiarize you with the methods used in FICUS, so if useful, you could consider applying it to your own datasets. 
 
 ```ruby
 # installing and loading FICUS
@@ -10,7 +10,7 @@ library(ficus)
 ```
 
 ## (0) Patient cohorts 
-This practical will use two small patient cohorts, one for demonstration purposes and one for you to use during the assignments. Each of the cohorts are based on a published data set: cohort A consists of 20 random patients from the SU2C-MARK lung cancer cohort [(Ravi et al., 2023) ](https://www.nature.com/articles/s41588-023-01355-5) while cohort B consists of 20 random patients from the [TCGA-KIRC cohort](https://gdc.cancer.gov/about-data/publications/kirc_2013).  
+Each of the cohorts are based on a published data set: cohort A consists of 20 random patients from the SU2C-MARK lung cancer cohort [(Ravi et al., 2023) ](https://www.nature.com/articles/s41588-023-01355-5) while cohort B consists of 20 random patients from the [TCGA-KIRC cohort](https://gdc.cancer.gov/about-data/publications/kirc_2013).  
 
 ```ruby
 # retrieve TF activities and annotations of the small patient cohorts 
@@ -52,6 +52,8 @@ The ```run_MOON``` function saves the several files, either required for the con
 - **(*)_ATT_decouplerino_full.csv** : functional scoring of each protein in the patient-specific protein network 
 - **(*).RData** : R object with patient-specific data 
 - **00_PKNsizes.RData** : overview of all protein network sizes (number of edges)
+
+
 
 ## (2) Network clustering 
 
