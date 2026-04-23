@@ -107,7 +107,7 @@ In general, any approach that clusters the patient-specific network would fit in
 ## (3) Converting MOON outputs to CellNOpt inputs 
 Until now, we've created patient-specific networks and subgroups. With our clusters formed, we can start preparing the group-specific logic-ODE model inputs: (1) a prior knowledge network (PKN) combining the patient-specific protein networks, and (2) training data based on the patient-specific functional scoring of corresponding proteins. 
 
-Let's start with the PKN, which will be saved as a SIF file for the logic-ODE model in CellNOpt. A straightforward way of creating a PKN representing the subgroup is by simply aggregating all patient-specific networks (union between all networks). One important issue is however that this significantly increases the number of edges in the network. To optimize an ODE model with thousands of edges (the number of parameters scales directly with the network size) becomes rapidly infeasible. We therefore include a strong network reduction step in the preparation of the PKN, with thresholds ```primary_threshold2``` and ```secondary_threshold2```.
+Let's start with the PKN, which will be saved as a SIF file for the logic-ODE model in CellNOpt. A straightforward way of creating a PKN representing the subgroup is by simply aggregating all patient-specific networks (union between all networks). One important issue is however that this significantly increases the number of edges in the network. Optimizing an ODE model with thousands of edges (the number of parameters scales directly with the network size) becomes rapidly infeasible. We therefore include a strong network reduction step in the preparation of the PKN, with thresholds ```primary_threshold2``` and ```secondary_threshold2```.
 
 In addition to the strict two-threshold network reduction, we also do some filtering based on occurrences of nodes and edges across patients. Firstly, we filter away proteins for which MOON activity scores are unknown for a large majority of the patients (```NA_threshold```). Secondly, we remove edges if they are not present across many patients (```NA_edge_threshold```). The edge filtering is important as an absence of such edge in a patient-specific MOON network might indicate that the edge was removed before during the consistency check in MOON. Such edges would be difficult to model, especially in combination with other patients.
 
@@ -122,7 +122,7 @@ clusters = read.csv(
   paste(## PATH TO "paste('Automatic_Clusters_', cluster_metric, '_nClusters=', 
         nClusters, '.csv', sep='')")
 
-# part 1 : preparing combined PKN 
+# part 1 : preparing combined PKN =========================================================================
 # (1) Define some variables 
 output_folder = ## PATH TO MOON OUTPUTS 
 
@@ -152,7 +152,6 @@ for (i in unique(clusters$cluster)){
 write.csv(nPat_nInd, paste(output_folder, 'cluster_annots.csv', sep=''),
           row.names = F)
 
-
 # (2) get PKN for clusters 
 # get union of all protein networks 
 # this includes filtering SIF based on how often an edge occurs across patients 
@@ -169,11 +168,59 @@ filename = paste(output_folder, 'nClust=',
 simplify_PKN(MOON_scores, SIF[[nIndex]], nIndex, primary_threshold2, secondary_threshold2,
              filename, nClusters)
 ```
+You could say that with our PKN, we now have the **model structure** of the logic-ODE model (i.e. model parameters), but to tune the model, we still need to prepare the **training data**. An advantage from the MOON outputs and the criteria we used to filter the network is that we have functional scores for a large set of proteins in the network, which we aim to fully leverage in the conversion to dynamic models. 
 
-(part 2 : preparing MIDAS (training data))
+For the training data, important steps include (1) defining patients as conditions, and (2) converting functional scores to CellNOpt compatible ranges. Moreover, we'd like to use a crossvalidation approach for model optimization, meaning we also need to prepare the different folds, each with different patients. The framework is specified to prepare MIDAS CSV files. If you're interested in the MIDAS format, you can refer to the [CNOdocs of CellNOpt section 2.2.1](https://saezlab.github.io/CellNOptR/6_CNODocs/). 
+
+```ruby
+# part 2 : preparing training data ==============================================
+# (1) define some variables
+# input preparation variables 
+scale_threshold = 2 # threshold for capping values 
+retain_perc <- 1 # fraction of proteins to optimize
+n_proteins <- 1000 # choose large number if you want to include all proteins
+k_folds <- 5 # number of folds in crossvalidation 
+
+# needed to ensure getting the same stimuli 
+set.seed(42)
+
+# load files 
+filename = ## PATH TO WHERE COMBINED PKN WAS SAVED #paste('../output/', output_folder,
+            #'/nClust=', nClusters, '_nIndex=', nIndex, '.RData', sep='')
+load(filename)
+SIF <- solution_network$SIF
+
+# get all MOON activity scores for each patient in the cluster 
+temp_output <- ## SET OUTPUT FOLDER 
+output <- get_ATT(sample_names, SIF, output_folder, nClusters, nIndex, 
+                  scale_threshold, temp_output, normalize=T)
+allATT <- output[['allATT']]
+allInputs <- output[['allInputs']]
+
+# (2) prepare inputs for CellNOpt - CNORode 
+temp_output <- paste(output_folder, 'model_inputs', sep='')
+prep_MIDAS(sample_names, SIF, nIndex, allInputs, allATT, temp_output,
+           active_threshold = NA, inactive_threshold = NA,
+           formalism = 'ODE', reduce_inputs = F)
+
+# split into train-validation with crossvalidation 
+MIDAS_filename <- paste('ODE_nPatients=', length(sample_names), 
+                        '_nIndex=', nIndex,  sep='')
+prep_crossvalidation(sample_names, nIndex, temp_output, MIDAS_filename, k_folds, 
+                     retain_perc = retain_perc, 
+                     n_proteins = n_proteins, formalism = 'ODE')
+
+print(paste('::: Final PKN size:', nrow(SIF)))
+print(paste('::: CNORode inputs are ready!', sep=''))
+```
+Similar to the previous steps, we got several output files from this step. The most important ones for the model optimization (**(XX)** is specific to the cluster):
+- **MIDAS_ODE_nPatients=(XX)_nIndex=(XX).csv** : MIDAS file with all patients, this file is used to create the different folds. The MIDAS files corresponding with the different folds (train, validation) have a similar naming convention, just with an additional indication whether it's train or validation, and which fold they correspond to.
+- **SIF_ODE_nPatients=(XX)_nIndex=(XX).SIF** : SIF file containing the combined PKN of all patients in the subgroup, can be used directly for CellNOpt
 
 ### Assignment
-(inspect SIF and MIDAS, try out with other data set, try out different strengths in network reduction)
+You can use this moment to inspect the SIF and MIDAS files, or prepare model inputs with the other data set. You can also play around with the variables that affect how strongly you're filtering the network: how do these influence the connectivity for instance within the network? 
+
+
 
 ## (4) Model optimization 
 
