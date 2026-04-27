@@ -1,13 +1,11 @@
 # FICUS Practical SystemsBiology2026
-This file includes both explanation and the code for the practical. Separate R scripts are also available for each section containing only the code. This practical includes a demonstration of the main FICUS functions, allowing you to go from omics data to logic models. Two small patient cohorts are provided, one for demonstration purposes and one for you to use during the assignments. The assignments here are more guidelines on what can be tuned in the current framework, and what you might want to consider when using the tools. They are nothing more than a place where you can try out the FICUS tools, change variables, investigate the outputs and compare across data sets. The aim is to familiarize you with the methods used in FICUS, so if useful, you could consider applying it to your own datasets. 
+Welcome to this introduction to FICUS! Next to this markdown with additional explanations for each step, there are two other R scripts important for the session:
+1. **00_MAIN.R** : Combines all the code from this markdown into one script, you can run this script in parallel to the explanations below. The suggestions is to run it line-by-line in Rstudio (CTRL + ENTER) so you can follow step by step what is happening, instead of running the entire script all at once.
+2. **00_ASSIGNMENTS.R** : While the previous script contains code for one example cohort, this script replaced specific lines with comments to indicate which variables you can set yourself to get more hands-on experience in running FICUS. The main idea is that you can use another example cohort from this repository to run the code and analyze the results, or if you're interested, you can also run data from your own project. Additionally, this script also encourages you to further analyze the results, so you can take a deeper dive into what you're actually getting from FICUS. 
 
-```ruby
-# installing and loading FICUS
-if (!requireNamespace("devtools", quietly = TRUE))
-    install.packages("devtools")
-devtools::install_github("https://github.com/saezlab/ficus")
-library(ficus)
-```
+This practical focuses on the main FICUS functions, allowing you to go from omics data to logic models. Two small patient cohorts are provided, one for demonstration purposes and one for you to use during the assignments. As briefly mentioned above, the assignments here are more guidelines on what can be tuned in the current framework, and what you might want to consider when using the tools. They are nothing more than a place where you can try out the FICUS tools, change variables, investigate the outputs and compare across data sets. The aim is to familiarize you with the methods used in FICUS, so if useful, you could consider applying it to your own datasets. 
+
+If you've finished going through the installation guide in the README, and don't have any more questions, you're ready to get started!
 
 ## (0) Patient cohorts 
 Each of the cohorts are based on a published data set: cohort A consists of 20 random patients from the SU2C-MARK lung cancer cohort [(Ravi et al., 2023) ](https://www.nature.com/articles/s41588-023-01355-5) while cohort B consists of 20 random patients from the [TCGA-KIRC cohort](https://gdc.cancer.gov/about-data/publications/kirc_2013).  
@@ -15,7 +13,6 @@ Each of the cohorts are based on a published data set: cohort A consists of 20 r
 ```ruby
 # retrieve the small patient cohorts 
 load('../data/cohortA.RData')
-load('../data/cohortB.RData')
 ```
 
 ## (1) Network curation with MOON
