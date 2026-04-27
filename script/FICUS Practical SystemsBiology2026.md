@@ -1,31 +1,39 @@
 # FICUS Practical SystemsBiology2026
 Welcome to this introduction to FICUS! Next to this markdown with additional explanations for each step, there are two other R scripts important for the session:
 1. **00_MAIN.R** : Combines all the code from this markdown into one script, you can run this script in parallel to the explanations below. The suggestions is to run it line-by-line in Rstudio (CTRL + ENTER) so you can follow step by step what is happening, instead of running the entire script all at once.
-2. **00_ASSIGNMENTS.R** : While the previous script contains code for one example cohort, this script replaced specific lines with comments to indicate which variables you can set yourself to get more hands-on experience in running FICUS. The main idea is that you can use another example cohort from this repository to run the code and analyze the results, or if you're interested, you can also run data from your own project. Additionally, this script also encourages you to further analyze the results, so you can take a deeper dive into what you're actually getting from FICUS. 
+2. **00_ASSIGNMENTS.R** : While the previous script contains code for one example cohort, this script replaced specific lines with comments to indicate which variables and paths you can set yourself to get more hands-on experience in running FICUS. The main idea is that you can use another example cohort from this repository to run the code, or if you're interested, you can also run data from your own project. Additionally, this script also encourages you to further analyze the results, so you can take a deeper dive into what you're actually getting from FICUS. 
 
-This practical focuses on the main FICUS functions, allowing you to go from omics data to logic models. Two small patient cohorts are provided, one for demonstration purposes and one for you to use during the assignments. As briefly mentioned above, the assignments here are more guidelines on what can be tuned in the current framework, and what you might want to consider when using the tools. They are nothing more than a place where you can try out the FICUS tools, change variables, investigate the outputs and compare across data sets. The aim is to familiarize you with the methods used in FICUS, so if useful, you could consider applying it to your own datasets. 
+This practical focuses on the main FICUS functions, allowing you to go from omics data to logic models. Two small patient cohorts are provided, one for demonstration purposes and one for you to use during the assignments. Each of the cohorts are based on a published data set: cohort A consists of 20 random patients from the SU2C-MARK lung cancer cohort [(Ravi et al., 2023) ](https://www.nature.com/articles/s41588-023-01355-5) while cohort B consists of 20 random patients from the [TCGA-KIRC cohort](https://gdc.cancer.gov/about-data/publications/kirc_2013).  
 
-If you've finished going through the installation guide in the README, and don't have any more questions, you're ready to get started!
+As briefly mentioned above, the assignments here are more guidelines on what can be tuned in the current framework, and what you might want to consider when using the tools. They are nothing more than a place where you can try out the FICUS tools, change variables, investigate the outputs and compare across data sets. The aim is to familiarize you with the methods used in FICUS, so if useful, you could consider applying it to your own datasets. 
 
-## (0) Patient cohorts 
-Each of the cohorts are based on a published data set: cohort A consists of 20 random patients from the SU2C-MARK lung cancer cohort [(Ravi et al., 2023) ](https://www.nature.com/articles/s41588-023-01355-5) while cohort B consists of 20 random patients from the [TCGA-KIRC cohort](https://gdc.cancer.gov/about-data/publications/kirc_2013).  
+If you've finished going through the installation guide in the README, didn't bump into weird errors and don't have any more questions, you're ready to get started!
+
+## (1) Network curation with MOON
+To derive patient-specific protein networks and corresponding functional scores for protiens, we'll provide the following inputs to MOON: (1) transcription factor (TF) activities, derived from bulk transcriptomics using [CollecTRI](https://github.com/saezlab/CollecTRI), and (2) a general Omnipath PKN. TF activities have already been loaded for ```cohortA``` and ```cohortB```, which we can use with the Omnipath PKN to run MOON. While running MOON, coherence checks are also performed together with a soft network reduction. The goal of this reduction is to create smaller protein networks that are computationally feasible for follow-up steps but still of significant size which we leverage when creating patient subgroups.
 
 ```ruby
+# Set directory and load libraries and data ----------------------------------
+path <- dirname(rstudioapi::getActiveDocumentContext()$path)
+setwd(path)
+
+library(ficus)
+library(reshape2)
+library(CellNOptR)
+library(CNORode)
+
 # retrieve the small patient cohorts 
 load('../data/cohortA.RData')
 ```
 
-## (1) Network curation with MOON
-To derive patient-specific protein networks and corresponding functional scores for protiens, we'll provide the following inputs to MOON: (1) transcription factor (TF) activities, derived from bulk transcriptomics using [CollecTRI](https://github.com/saezlab/CollecTRI), and (2) a general Omnipath PKN. TF activities have already been loaded for ```cohortA``` and ```cohortB```, which we can use with the Omnipath PKN to run MOON. While running MOON, coherence checks are also performed and a soft network reduction to create smaller networks more computationally feasible for follow-up steps but still of significant size which we leverage when creating patient subgroups. Please note that you'll need to create and define the folder for output files. 
-
 ```ruby
-# setting some variables for MOON
+## STEP 1 : NETWORK CURATION WITH MOON ----------------------------------------
+# setting some variables for MOON 
 PKN_path <- '../data/clean_omnipath_PKN.RData' # data for initial PKN
 min_size_PKN = 20 # minimal size for PKN 
 significant_input_threshold <- 2 # threshold to filter TF activities 
 n_steps <- 6 # number of steps during network pruning
 use_subset = F # if desired, can select subset of proteins for network
-output_folder <- ## ADD EXISTING OUTPUT FOLDER
 
 # thresholds for soft network reduction
 primary_threshold1 = 0.5
@@ -36,10 +44,11 @@ load('../data/Collectri_PROGENy_networks.RData')
 net$confidence <- NA
 net <- net[,c('source', 'confidence', 'target', 'mor')]
 
-# running MOON
-# this section takes around 5 minutes to run 
+# running MOON 
+# this section takes around 5 minutes to run  
+output_folder <- '../output/MOON/' 
 start <- 1
-end <- length(cosmos_inputs_A) # 11:49
+end <- length(cosmos_inputs_A) 
 run_MOON(cosmos_inputs=cosmos_inputs_A, 
          significant_input_threshold=significant_input_threshold,
          PKN_path=PKN_path, 
