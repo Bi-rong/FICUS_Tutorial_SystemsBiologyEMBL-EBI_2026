@@ -7,3 +7,32 @@ This repository contains the assignments (incl. data sets) and slides used for t
 
 
 https://drive.google.com/file/d/1B12r4hdZBSy_6WuvZO-_M79YkqJMgCya/view?usp=sharing
+
+```ruby
+path <- dirname(rstudioapi::getActiveDocumentContext()$path)
+setwd(path)
+
+# install CellNOptR 
+if (!requireNamespace("BiocManager", quietly = TRUE)){
+  install.packages("BiocManager")}
+BiocManager::install("CellNOptR")
+
+# install CNORode
+BiocManager::install("CNORode")
+BiocManager::install("MEIGOR")
+
+# install cosmosR
+devtools::install_github("saezlab/cosmosR")
+
+# install ficus
+if (!requireNamespace("devtools", quietly = TRUE)){
+  install.packages("devtools")}
+devtools::install('../../ficus-main')
+#devtools::install_deps('../../ficus-main')
+
+# test if libraries were installed correctly
+library(CellNOptR)
+library(CNORode)
+library(ficus)
+
+```
