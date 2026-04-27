@@ -33,7 +33,7 @@ net <- net[,c('source', 'confidence', 'target', 'mor')]
 
 # running MOON 
 # this section takes around 5 minutes to run  
-output_folder <- '../output/MOON_cohortA/' 
+output_folder <- '../output/MOON/' 
 start <- 1
 end <- length(cosmos_inputs_A) 
 run_MOON(cosmos_inputs=cosmos_inputs_A, 
@@ -52,14 +52,14 @@ run_MOON(cosmos_inputs=cosmos_inputs_A,
 
 ## STEP 2 : NETWORK CLUSTERING ------------------------------------------------
 # load data from previous step 
-load('../output/MOON_cohortA/allSIF.RData')
+load('../output/MOON/allSIF.RData')
 nPatients <- length(unique(allSIF$patient))
 all_edges <- unique(allSIF[,c('source', 'target')])
 
 # perform clustering 
 # this section takes a few minutes
 cluster_metric = 'Jaccard'
-output_folder = '../output/clustering_cohortA/'
+output_folder = '../output/clustering/'
 nClusters = 3
 
 res <- cluster_networks(nPatients, all_edges, allSIF,
@@ -73,19 +73,19 @@ save(res, file=paste(output_folder, 'Heatmap_', cluster_metric, '_data.RData', s
 
 ## STEP 3 : CONVERTING MOON OUTPUTS INTO CELLNOPT INPUTS ----------------------
 # load data from previous step 
-load('../output/MOON_cohortA/allSIF.RData') # load RData with all SIF files 
+load('../output/MOON/allSIF.RData') # load RData with all SIF files 
 
 # clusters
 cluster_metric = 'Jaccard' 
 nClusters = 3 
 clusters = read.csv(
-  paste('../output/clustering_cohortA/Automatic_Clusters_', cluster_metric, '_nClusters=', 
+  paste('../output/clustering/Automatic_Clusters_', cluster_metric, '_nClusters=', 
         nClusters, '.csv', sep=''))
 
 
 # part 1 : preparing combined PKN 
 # (1) Define some variables 
-output_folder = '../output/MOON_cohortA/' # folder where you also saved MOON outputs
+output_folder = '../output/MOON/' # folder where you also saved MOON outputs
 
 # threshold for protein selection : fraction of patients that don't have NA for this protein
 NA_threshold = 0.8
@@ -177,8 +177,8 @@ print(paste('::: CNORode inputs are ready!', sep=''))
 
 
 ## STEP 5 : IN SILICO KNOCKOUT SCREENINGS -------------------------------------
-folder <- 'MOON_cohortA'
-clusters <- read.csv(paste('../output/clustering_cohortA/Automatic_Clusters_Jaccard_nClusters=3.csv', sep=''),
+folder <- 'MOON'
+clusters <- read.csv(paste('../output/clustering/Automatic_Clusters_Jaccard_nClusters=3.csv', sep=''),
                      check.names = F)
 
 metric <- 'Jaccard'
@@ -199,7 +199,7 @@ patient_names <- data.frame('Condition'=1:length(patient_names),
                             'Patient'=patient_names)
 
 # get optimized model(s)
-load('../output/Results_continuous_model.RData')
+load('../data/trained_models/cohortA_cluster1.RData')
 
 all_simulations <- data.frame()
 for (current_idx in 1:length(all_res)){
@@ -227,15 +227,19 @@ for (current_idx in 1:length(all_res)){
 all_changed = list()
 proteins <- unique(all_simulations$Protein)[1:5] # run for 5 proteins as example
 knockout_simulations <- data.frame()
+changed_idx = 1 
 for (protein in proteins){ 
   for (current_idx in 1:length(all_res)){
     optimized_parameters <- all_res[[current_idx]]
     
     print(paste(protein, current_idx))
     
-    one_knockout <- simulate_knockout(protein, optimized_parameters, 
-                                      cnolist, model, paramsSSm, plotParams, 
-                                      patient_names)
+    temp <- simulate_knockout(protein, optimized_parameters, 
+                              cnolist, model, paramsSSm, plotParams, 
+                              patient_names)
+    one_knockout <- temp[['simulation']]
+    all_changed[[changed_idx]] <- temp[['changed']]
+    changed_idx = changed_idx + 1 
     
     one_knockout$run <- current_idx
     one_knockout$knockout <- protein
