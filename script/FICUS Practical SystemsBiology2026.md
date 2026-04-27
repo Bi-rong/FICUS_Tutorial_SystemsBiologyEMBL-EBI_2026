@@ -63,7 +63,7 @@ run_MOON(cosmos_inputs=cosmos_inputs_A,
          end=end)
 ```
 
-The ```run_MOON``` function saves the several files, either required for the conversion to a logic model, or for analysis purposes (**(*)** stands for the cell line or patient id):
+The ```run_MOON``` function saves several files, either required for the conversion from omics data to logic modelc, or for analysis purposes (**(*)** stands for the cell line or patient id):
 - **allSIF.RData** : collection of all patient-specific protein networks, can be used for easy comparison and analysis of the curated networks
 - **(*)_BeforeReduction_SIF_decouplerino_full.csv** : patient-specific protein network before soft network reduction 
 - **(*)_SIF_decouplerino_full.csv** : final patient-specific protein network 
@@ -82,24 +82,23 @@ Important is that if you use higher thresholds, the effect on the network become
 If you're satisfied with the patient-specific networks, you can use these networks to create patient subgroups. We introduce here a simple hierarchical clustering approach based on similarity between network edges, also referred to as the 'Jaccard' clustering metric. As we saved quite a lot of intermediate results in the previous section, we can load them directly. Note that the clustering scales with the number of patients, as it requires calculation of all pairwise Jaccard indices. For 20 patients, it'll only take a few minutes at most, but this can scale up quite rapidly if you have hundreds of patients.   
 
 ```ruby
-# load data from previous step
+## STEP 2 : NETWORK CLUSTERING ------------------------------------------------
+# load data from previous step 
 load('../output/MOON/allSIF.RData')
 nPatients <- length(unique(allSIF$patient))
 all_edges <- unique(allSIF[,c('source', 'target')])
 
 # perform clustering 
-# this section takes a few minutes 
+# this section takes a few minutes
 cluster_metric = 'Jaccard'
-output_folder = ## ADD EXISTING OUTPUT FOLDER
+output_folder = '../output/clustering/'
 nClusters = 3
 
 res <- cluster_networks(nPatients, all_edges, allSIF,
                         output_folder, nClusters, 
                         metric = cluster_metric) 
 save(res, file=paste(output_folder, 'Heatmap_', cluster_metric, '_data.RData', sep=''))
-
 ```
-
 The ```cluster_networks``` will save three outputs (**(*)** stands for the number of clusters you've chosen for the hierarchical clustering):
 - **Automatic_Clusters_Jaccard_nClusters=(*)** : overview of all patients and corresponding cluster index that was assigned to them
 - **Heatmap_Jaccard.png**: visualization of pairwise Jaccard indices and corresponding clusters
@@ -111,26 +110,28 @@ You can run the clustering for both cohorts A and B and compare how the Jaccard 
 In general, any approach that clusters the patient-specific network would fit in this step. You could take a moment to reflect (if you work with networks in your research) whether you have specific topology-related or biologically-related features that could be relevent for patient stratification. Think of number of interactions per protein, the presence of a protein subset, connectivity, or if you have access to patient annotations, whether e.g. cancer subtype or tumor grade could be used for patient subgroup formation. 
 
 ## (3) Converting MOON outputs to CellNOpt inputs 
-Until now, we've created patient-specific networks and subgroups. With our clusters formed, we can start preparing the group-specific logic-ODE model inputs: (1) a prior knowledge network (PKN) combining the patient-specific protein networks, and (2) training data based on the patient-specific functional scoring of corresponding proteins. 
+With our clusters formed, we can start preparing the group-specific logic-ODE model inputs: (1) a prior knowledge network (PKN) combining the patient-specific protein networks, and (2) training data based on the patient-specific functional scoring of corresponding proteins. 
 
 Let's start with the PKN, which will be saved as a SIF file for the logic-ODE model in CellNOpt. A straightforward way of creating a PKN representing the subgroup is by simply aggregating all patient-specific networks (union between all networks). One important issue is however that this significantly increases the number of edges in the network. Optimizing an ODE model with thousands of edges (the number of parameters scales directly with the network size) becomes rapidly infeasible. We therefore include a strong network reduction step in the preparation of the PKN, with thresholds ```primary_threshold2``` and ```secondary_threshold2```.
 
 In addition to the strict two-threshold network reduction, we also do some filtering based on occurrences of nodes and edges across patients. Firstly, we filter away proteins for which MOON activity scores are unknown for a large majority of the patients (```NA_threshold```). Secondly, we remove edges if they are not present across many patients (```NA_edge_threshold```). The edge filtering is important as an absence of such edge in a patient-specific MOON network might indicate that the edge was removed before during the consistency check in MOON. Such edges would be difficult to model, especially in combination with other patients.
 
 ```ruby
+## STEP 3 : CONVERTING MOON OUTPUTS INTO CELLNOPT INPUTS ----------------------
 # load data from previous step 
-load(## PATH TO "allSIF.RData") # load RData with all SIF files 
+load('../output/MOON/allSIF.RData') # load RData with all SIF files 
 
-# clusters : define cluster_metric and nClusters corresponding with the chosen values during clustering
+# clusters
 cluster_metric = 'Jaccard' 
 nClusters = 3 
 clusters = read.csv(
-  paste(## PATH TO "paste('Automatic_Clusters_', cluster_metric, '_nClusters=', 
-        nClusters, '.csv', sep='')")
+  paste('../output/clustering/Automatic_Clusters_', cluster_metric, '_nClusters=', 
+        nClusters, '.csv', sep=''))
 
-# part 1 : preparing combined PKN =========================================================================
+
+# part 1 : preparing combined PKN 
 # (1) Define some variables 
-output_folder = ## PATH TO MOON OUTPUTS 
+output_folder = '../output/MOON/' # folder where you also saved MOON outputs
 
 # threshold for protein selection : fraction of patients that don't have NA for this protein
 NA_threshold = 0.8
@@ -145,7 +146,7 @@ secondary_threshold2 = 2
 # select cluster to prepare for logic-ODE model 
 # you can use heatmap visualization from previous step to determine which 
 # cluster could be suitable 
-nIndex = ## CHOOSE CLUSTER INDEX TO PREPARE FOR LOGIC-MODEL
+nIndex = 1
 
 # get dataframe with nIndex and nPatients
 nPat_nInd <- data.frame()
@@ -173,13 +174,14 @@ filename = paste(output_folder, 'nClust=',
                  sep='')
 simplify_PKN(MOON_scores, SIF[[nIndex]], nIndex, primary_threshold2, secondary_threshold2,
              filename, nClusters)
+
 ```
 You could say that with our PKN, we now have the **model structure** of the logic-ODE model (i.e. model parameters), but to tune the model, we still need to prepare the **training data**. An advantage from the MOON outputs and the criteria we used to filter the network is that we have functional scores for a large set of proteins in the network, which we aim to fully leverage in the conversion to dynamic models. 
 
 For the training data, important steps include (1) defining patients as conditions, and (2) converting functional scores to CellNOpt compatible ranges. Moreover, we'd like to use a crossvalidation approach for model optimization, meaning we also need to prepare the different folds, each with different patients. The framework is specified to prepare MIDAS CSV files. If you're interested in the MIDAS format, you can refer to the [CNOdocs of CellNOpt section 2.2.1](https://saezlab.github.io/CellNOptR/6_CNODocs/). 
 
 ```ruby
-# part 2 : preparing training data ==============================================
+# part 2 : preparing training data 
 # (1) define some variables
 # input preparation variables 
 scale_threshold = 2 # threshold for capping values 
@@ -191,20 +193,21 @@ k_folds <- 5 # number of folds in crossvalidation
 set.seed(42)
 
 # load files 
-filename = ## PATH TO WHERE COMBINED PKN WAS SAVED #paste('../output/', output_folder,
-            #'/nClust=', nClusters, '_nIndex=', nIndex, '.RData', sep='')
+filename = paste(output_folder, '/nClust=',
+                 nClusters, '_nIndex=', nIndex, '.RData',
+                 sep='')
 load(filename)
 SIF <- solution_network$SIF
 
 # get all MOON activity scores for each patient in the cluster 
-temp_output <- ## SET OUTPUT FOLDER 
+temp_output <- paste(output_folder, '/', sep='')
 output <- get_ATT(sample_names, SIF, output_folder, nClusters, nIndex, 
                   scale_threshold, temp_output, normalize=T)
 allATT <- output[['allATT']]
 allInputs <- output[['allInputs']]
 
 # (2) prepare inputs for CellNOpt - CNORode 
-temp_output <- paste(output_folder, 'model_inputs', sep='')
+temp_output <- output_folder
 prep_MIDAS(sample_names, SIF, nIndex, allInputs, allATT, temp_output,
            active_threshold = NA, inactive_threshold = NA,
            formalism = 'ODE', reduce_inputs = F)
