@@ -17,10 +17,11 @@ devtools::install_github("saezlab/cosmosR")
 if (!requireNamespace("devtools", quietly = TRUE)){
   install.packages("devtools")}
 devtools::install('../../ficus-main')
-#devtools::install_deps('../../ficus-main')
+#devtools::install_deps('../../ficus-main') 
 #devtools::install_github("https://github.com/saezlab/ficus") # install from repository
 
 # test if libraries were installed correctly
 library(CellNOptR)
 library(CNORode)
 library(ficus)
+library(reshape2) # check if dependencies are installed correctly

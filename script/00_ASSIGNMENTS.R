@@ -8,19 +8,21 @@ library(CellNOptR)
 library(CNORode)
 
 # retrieve the small patient cohorts 
-load('../data/cohortA.RData')
+load('../data/cohortB.RData')
+# you can also load another data set
+# if you did, replace cosmos_inputs_B below with your own cosmos_inputs
 
 ## STEP 1 : NETWORK CURATION WITH MOON ----------------------------------------
 # setting some variables for MOON 
-PKN_path <- '../data/clean_omnipath_PKN.RData' # data for initial PKN
-min_size_PKN = 20 # minimal size for PKN 
-significant_input_threshold <- 2 # threshold to filter TF activities 
+PKN_path <- ## SET PATH TO GENERAL PROTEIN NETWORK 
+min_size_PKN = ## VALUE  # minimal size for PKN 
+significant_input_threshold <- ## VALUE # threshold to filter TF activities 
 n_steps <- 6 # number of steps during network pruning
 use_subset = F # if desired, can select subset of proteins for network
 
 # thresholds for soft network reduction
-primary_threshold1 = 0.5
-secondary_threshold1 = 0.25
+primary_threshold1 = ## VALUE 
+secondary_threshold1 = ## VALUE 
 
 # CollecTRI net used in MOON 
 load('../data/Collectri_PROGENy_networks.RData') 
@@ -28,11 +30,10 @@ net$confidence <- NA
 net <- net[,c('source', 'confidence', 'target', 'mor')]
 
 # running MOON 
-# this section takes around 5 minutes to run  
-output_folder <- '../output/MOON/' 
+output_folder <- ## SET OUTPUT PATH 
 start <- 1
-end <- length(cosmos_inputs_A) 
-run_MOON(cosmos_inputs=cosmos_inputs_A, 
+end <- length(cosmos_inputs_B) 
+run_MOON(cosmos_inputs=cosmos_inputs_B, 
          significant_input_threshold=significant_input_threshold,
          PKN_path=PKN_path, 
          n_steps=n_steps, 
@@ -45,18 +46,27 @@ run_MOON(cosmos_inputs=cosmos_inputs_A,
          start=start, 
          end=end)
 
+# ROOM FOR ANALYSES ===========================================================
+# example: load AllSIF.RData to investigate the patient-specific PKN
+# how often are specific proteins occuring in the different patients?
+# what is the distribution of network sizes?
+# how dense are the networks (i.e. edges w.r.t. nodes)? 
+# also important, how does the network look like? (e.g. load in)
+
+
 
 ## STEP 2 : NETWORK CLUSTERING ------------------------------------------------
 # load data from previous step 
-load('../output/MOON/allSIF.RData')
+filename <- ## PATH TO AllSIF.RData
+load(filename)
 nPatients <- length(unique(allSIF$patient))
 all_edges <- unique(allSIF[,c('source', 'target')])
 
 # perform clustering 
 # this section takes a few minutes
 cluster_metric = 'Jaccard'
-output_folder = '../output/clustering/'
-nClusters = 3
+output_folder = ## SET PATH 
+nClusters = # SET NUMBER OF CLUSTERS
 
 res <- cluster_networks(nPatients, all_edges, allSIF,
                         output_folder, nClusters, 
@@ -64,39 +74,48 @@ res <- cluster_networks(nPatients, all_edges, allSIF,
 save(res, file=paste(output_folder, 'Heatmap_', cluster_metric, '_data.RData', sep=''))
 
 
+# ROOM FOR ANALYSES ===========================================================
+# example: take a look at the heatmap, how do your clusters look?
+# what happens when you increase / decrease number of clusters?
+# how is the variation in cluster sizes? 
+
+# another example: can you think of another way to create patient subgroups?
+
+
+
 
 
 
 ## STEP 3 : CONVERTING MOON OUTPUTS INTO CELLNOPT INPUTS ----------------------
 # load data from previous step 
-load('../output/MOON/allSIF.RData') # load RData with all SIF files 
+filename = ## PATH TO AllSIF.RData
+load(filename) # load RData with all SIF files 
 
 # clusters
 cluster_metric = 'Jaccard' 
-nClusters = 3 
-clusters = read.csv(
-  paste('../output/clustering/Automatic_Clusters_', cluster_metric, '_nClusters=', 
-        nClusters, '.csv', sep=''))
+nClusters = ## SET NUMBER OF CLUSTERS 
+filename = ## PATH TO RDATA FILE WITH CLUSTER DATA
+clusters = read.csv(filename)
 
 
 # part 1 : preparing combined PKN 
 # (1) Define some variables 
-output_folder = '../output/MOON/' # folder where you also saved MOON outputs
+output_folder = ## PATH TO FOLDER WITH MOON OUTPUTS
 
 # threshold for protein selection : fraction of patients that don't have NA for this protein
-NA_threshold = 0.8
+NA_threshold = ## SET VALUE
 
 # threshold for edge selection : fraction of patient that need to have this edge before selection 
-NA_edge_threshold = 0.70
+NA_edge_threshold = ## SET VALUE
 
 # set thresholds for network reduction
-primary_threshold2 = 3
-secondary_threshold2 = 2
+primary_threshold2 = ## SET VALUE
+secondary_threshold2 = ## SET VALUE
 
 # select cluster to prepare for logic-ODE model 
 # you can use heatmap visualization from previous step to determine which 
 # cluster could be suitable 
-nIndex = 1
+nIndex = ## SET VALUE
 
 # get dataframe with nIndex and nPatients
 nPat_nInd <- data.frame()
@@ -132,10 +151,10 @@ simplify_PKN(MOON_scores, SIF[[nIndex]], nIndex, primary_threshold2, secondary_t
 # part 2 : preparing training data 
 # (1) define some variables
 # input preparation variables 
-scale_threshold = 2 # threshold for capping values 
+scale_threshold = ## SET VALUE # threshold for capping values 
 retain_perc <- 1 # fraction of proteins to optimize
-n_proteins <- 1000 # choose large number if you want to include all proteins
-k_folds <- 5 # number of folds in crossvalidation 
+n_proteins <- ## SET VALUE # choose large number if you want to include all proteins
+k_folds <- ## SET VALUE # number of folds in crossvalidation 
 
 # needed to ensure getting the same stimuli 
 set.seed(42)
@@ -170,6 +189,13 @@ prep_crossvalidation(sample_names, nIndex, temp_output, MIDAS_filename, k_folds,
 print(paste('::: Final PKN size:', nrow(SIF)))
 print(paste('::: CNORode inputs are ready!', sep=''))
 
+
+# ROOM FOR ANALYSES ===========================================================
+# example : how does the final PKN look like (e.g. Cytoscape)
+
+# another example : how does changing the different parameters affect the final 
+# MIDAS and SIF files? How do these changes affect the number of connected 
+# components in the network?
 
 
 ## STEP 5 : IN SILICO KNOCKOUT SCREENINGS -------------------------------------
@@ -264,3 +290,42 @@ knockout_simulations <- replace_values(old_names, new_names, 'knockout',
 # save results results of complete in silico knockout screening 
 save(knockout_simulations, all_simulations, old_names, new_names, 
      file = paste('../output/', folder, '/knockout_results.RData', sep=''))
+
+# ROOM FOR ANALYSES ===========================================================
+# example: in addition to just trying out some visualizations and other further
+# analyses of the knockout experiments, you can also try to implement 
+# combinatorial knockout
+
+# here's the source code of the simulate_knockout function which you can modify
+
+#function (knockout_protein, optimized_parameters, cnolist, model, 
+#          paramsSSm, plotParams, patient_names) 
+#{
+#  k_par_names <- optimized_parameters$parNames[optimized_parameters$index_k]
+#  tau_par_names <- optimized_parameters$parNames[optimized_parameters$index_tau]
+#  interactions <- k_par_names[grepl(paste("_", knockout_protein, 
+#                                          sep = ""), k_par_names, fixed = TRUE)]
+#  temp <- k_par_names[grepl(paste("^", knockout_protein, "_", 
+#                                  sep = ""), k_par_names)]
+#  tau <- tau_par_names[tau_par_names == paste("tau_", knockout_protein, 
+#                                              sep = "")]
+#  interactions <- append(interactions, temp)
+#  interactions <- append(interactions, tau)
+#  interaction_knockout_model <- optimized_parameters
+#  interaction_knockout_model$parValues[interaction_knockout_model$parNames %in% 
+#                                         interactions] <- 0
+#  changed_df <- data.frame(Parameter = interactions, Old = optimized_parameters$parValues[optimized_parameters$parNames %in% 
+#                                                                                            interactions], New = interaction_knockout_model$parValues[interaction_knockout_model$parNames %in% 
+#                                                                                                                                                        interactions])
+#  all_changed <- append(all_changed, list(knockout_protein = changed_df))
+#  simulated_data_optimized = plotLBodeFitness(cnolist, model, 
+#                                              transfer_function = paramsSSm$transfer_function, ode_parameters = interaction_knockout_model, 
+#                                              plotParams = plotParams)
+#  temp <- simulated_data_optimized[[2]]
+#  colnames(temp) <- colnames(data.frame(cnolist@signals$`10`))
+#  simulation_df <- melt(temp)
+#  colnames(simulation_df) <- c("Condition", "Protein", "Activity")
+#  simulation_df <- merge(simulation_df, patient_names, by = "Condition")
+#  return(list(simulation = simulation_df, changed = changed_df))
+#}
+
