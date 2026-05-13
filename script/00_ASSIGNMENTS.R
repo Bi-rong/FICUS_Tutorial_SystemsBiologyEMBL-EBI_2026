@@ -51,7 +51,7 @@ run_MOON(cosmos_inputs=cosmos_inputs_B,
 # how often are specific proteins occuring in the different patients?
 # what is the distribution of network sizes?
 # how dense are the networks (i.e. edges w.r.t. nodes)? 
-# also important, how does the network look like? (e.g. load in)
+# also important, how does the network look like? (e.g. load in Cytoscape)
 
 
 
