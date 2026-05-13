@@ -1,5 +1,6 @@
 # FICUS_Tutorial_SystemsBiologyEMBL-EBI_2026
-_Wang et al. 2026 Manuscript in preparation_
+_Wang et al. 2026 Manuscript in preparation_ <br>
+<br>
 Repository with course material for the session "From omics data to networks to mechanistic models" of the Systems Biology course EMBL-EBI 2026. 
 
 This repository contains the assignments (incl. data sets) and slides used for the session. The assignments provide examples of how FICUS and the integrated methods can be used to go from omics data to dynamic logic models. The main github of FICUS (link will be added if repository goes public) includes extended vignettes, with more details the different variables that you can tune in the framework, so please refer to them if you're interested. 
