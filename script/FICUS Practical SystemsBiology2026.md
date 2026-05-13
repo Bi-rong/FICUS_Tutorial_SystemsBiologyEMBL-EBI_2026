@@ -76,8 +76,6 @@ The ```run_MOON``` function saves several files, either required for the convers
 ### Assignment 
 After you've run the demo code above for cohortA, you can inspect the outputs, including functional scoring (ATT) and protein networks (SIF). The SIF files can also be loaded into a software such as Cytoscape for visualization. Note that only a soft network reduction is used, you can try changing the ```primary_threshold1``` and ```secondary_threshold1``` to get a feel for how these thresholds affect the network sizes. 
 
-Important is that if you use higher thresholds, the effect on the network becomes relatively patient-specific. You can also test how the variation in network sizes changes based on these threshold values. If you use another data set, note that for a soft network reduction, a generalized value can be used. If you wish to do already stronger network filtering before the clustering, it might be necessary to set these thresholds more manually to retain consistency across patients. 
-
 ## (2) Network clustering 
 If you're satisfied with the patient-specific networks, you can use these networks to create patient subgroups. We introduce here a simple hierarchical clustering approach based on similarity between network edges, also referred to as the 'Jaccard' clustering metric. As we saved quite a lot of intermediate results in the previous section, we can load them directly. Note that the clustering scales with the number of patients, as it requires calculation of all pairwise Jaccard indices. For 20 patients, it'll only take a few minutes at most, but this can scale up quite rapidly if you have hundreds of patients.   
 
